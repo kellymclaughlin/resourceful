@@ -72,7 +72,12 @@ module Resourceful
 
     def update_credentials(challenge_response)
       @domain = Addressable::URI.parse(challenge_response.uri).host
-      @challenge = HTTPAuth::Digest::Challenge.from_header(challenge_response.header['WWW-Authenticate'].first)
+      #Do this because httpauth expects a comma-separated list.
+      formatted_auth_header = String.new
+      challenge_response.header['WWW-Authenticate'].each { |header|
+        formatted_auth_header += header + ','
+      }
+      @challenge = HTTPAuth::Digest::Challenge.from_header(formatted_auth_header.chop)
     end
 
     def valid_for?(challenge_response)
@@ -82,7 +87,6 @@ module Resourceful
       rescue HTTPAuth::UnwellformedHeader
         return false
       end
-      challenge.realm == @realm
     end
 
     def can_handle?(request)
